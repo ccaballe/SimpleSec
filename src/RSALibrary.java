@@ -71,6 +71,7 @@ public class RSALibrary {
             e.printStackTrace();
         } catch (InvalidKeyException e) {
             System.err.println("Invalid passphrase length. It must be 16 bytes");
+            System.exit(-1);
         }
 
     }

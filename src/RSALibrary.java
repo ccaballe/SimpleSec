@@ -69,7 +69,10 @@ public class RSALibrary {
             Files.write(Paths.get(file), privateKeyProtected);
         } catch (IOException e) {
             e.printStackTrace();
+        } catch (InvalidKeyException e) {
+            System.err.println("Invalid passphrase length. It must be 16 bytes");
         }
+
     }
 
     /***********************************************************************************/

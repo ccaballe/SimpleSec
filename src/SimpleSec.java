@@ -5,10 +5,7 @@ import java.io.ObjectInputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
-import java.security.NoSuchAlgorithmException;
-import java.security.PrivateKey;
-import java.security.PublicKey;
-import java.security.SecureRandom;
+import java.security.*;
 import java.util.Arrays;
 import java.util.Scanner;
 
@@ -24,8 +21,9 @@ public class SimpleSec {
                 String passphrase = in.next();
                 try {
                     rsaLibrary.generateKeys(passphrase);
+                    System.out.println("Public and private keys was successfully generated.");
                 } catch (IOException e) {
-                    e.printStackTrace();
+                    System.out.println("Incorrect passphrase");
                 }
                 break;
             case "e":
@@ -34,29 +32,32 @@ public class SimpleSec {
                 try {
                     byte[] plainText = Files.readAllBytes(Paths.get(sourceFile));
                     byte[] sessionKey = new byte[16];
+                    // generate a session key randomly
                     SecureRandom.getInstanceStrong().nextBytes(sessionKey);
                     SymmetricCipher symmetricCipher = new SymmetricCipher(sessionKey);
                     byte[] ciphertext = symmetricCipher.encryptCBC(plainText);
                     Files.write(Paths.get(destFile), ciphertext);
 
-                    // ciframos clave de sesión con clave pública
+                    // encrypt session key with the public key
                     ObjectInputStream inputStream = new ObjectInputStream(new FileInputStream(rsaLibrary.PUBLIC_KEY_FILE));
                     PublicKey publicKey = (PublicKey) inputStream.readObject();
                     byte[] publicKeyEncrypted = rsaLibrary.encrypt(sessionKey, publicKey);
                     Files.write(Paths.get(destFile), publicKeyEncrypted, StandardOpenOption.APPEND);
 
-                    // firma
+                    // sign
                     PrivateKey privateKey = getPrivateKey(rsaLibrary);
-                    // TODO: Firmar un hash!
                     byte[] sign = rsaLibrary.sign(ciphertext, privateKey);
                     Files.write(Paths.get(destFile), sign, StandardOpenOption.APPEND);
 
+                    System.out.println("File " + sourceFile + " was successfully encrypted and signed in " + destFile);
                 } catch (NoSuchAlgorithmException e) {
                     e.printStackTrace();
                 } catch (IOException e) {
                     e.printStackTrace();
                 } catch (ClassNotFoundException e) {
                     e.printStackTrace();
+                } catch (InvalidKeyException e) {
+                    System.err.println("Passphrase incorrect. It must has 16 bytes");
                 }
 
                 break;
@@ -80,13 +81,15 @@ public class SimpleSec {
                     SymmetricCipher symmetricCipher = new SymmetricCipher(sessionKey);
                     byte[] plaintext = symmetricCipher.decryptCBC(ciphertext);
                     Files.write(Paths.get(destFile), plaintext);
+                    System.out.println("File " + sourceFile + " was successfully verified and decrypted in " + destFile);
 
                 } catch (IOException e) {
                     e.printStackTrace();
                 } catch (InvalidPaddingException e) {
                     e.printStackTrace();
+                } catch (InvalidKeyException e) {
+                    System.err.println("Passphrase incorrect. It must has 16 bytes");
                 }
-
                 break;
             default:
                 System.out.println("Unknown operation");

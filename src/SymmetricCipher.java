@@ -17,12 +17,8 @@ public class SymmetricCipher {
     /* Constructor method */
 
     /*************************************************************************************/
-    public SymmetricCipher(byte[] byteKey) {
-        try {
-            this.s = new SymmetricEncryption(byteKey);
-        } catch (InvalidKeyException e) {
-            e.printStackTrace();
-        }
+    public SymmetricCipher(byte[] byteKey) throws InvalidKeyException {
+        this.s = new SymmetricEncryption(byteKey);
     }
 
     /*************************************************************************************/
